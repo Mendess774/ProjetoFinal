@@ -1,124 +1,81 @@
-﻿﻿using System;
-using System.Threading;
+﻿﻿﻿using System.Security.Cryptography;
 
-namespace Truco_v1
+Console.ForegroundColor = ConsoleColor.DarkRed;
+Console.WriteLine(" MÂO DE TRUCO\n");
+Console.ResetColor();
+
+var baralho = new BaralhoLimpo();
+
+for (int jogador = 1; jogador <= 4; jogador++)
 {
-	class Program
-	{
-		public static void Main(String[] args)
-		{
-			int numCard = 0, pesoJogador = 0, pesoComputador = 0;
-			int ganhouAMao = 0;
-			int maoComputador = 0, maoJogador = 0;
-			bool acabouOJogo = false, jogadorGanhou = false, acabouARodada = false;
-			bool jaJogou = false;
-			ConsoleColor aux = Console.ForegroundColor;
+    Console.Write($"{jogador}º jogador: ");
+    for (int carta = 1; carta <= 3; carta++)
+    {
+        Console.Write($"{baralho.CartaDoTopo.Face} ");
+    }
+    Console.WriteLine();
+}
+Console.ForegroundColor = ConsoleColor.Red;
+Console.WriteLine($"\nVira: {baralho.CartaDoTopo.Face}");
+Console.ResetColor();
 
-         Partida pontos = new Partida();
-			Controle control = new Controle();
+// while (baralho.CartasRestantes > 0) Console.Write($"{baralho.CartaDoTopo.Face} ");
 
+class BaralhoLimpo
+{
+    private const string NaipesValidos = "♣♥♠♦";
+    private const string NumerosValidos = "A23QJK";
+    private Stack<Carta> cartas = new();
+    public BaralhoLimpo()
+    {
+        foreach (var naipe in NaipesValidos)
+            foreach (var numero in NumerosValidos)
+                cartas.Push(new Carta(numero.ToString(), naipe.ToString()));
 
-			while (!acabouOJogo)
-			{
-				try
-				{
-					control.Baralho();  //distribui as cartas aleatórias
-					jogadorGanhou = false;//reseta
-					acabouARodada = false;
-					int countMao = 0;
+        Embaralhar();
+    }
 
-					int[] jaJogouEssaCarta = new int[3] { 0, 0, 0 };
-					int[] comuputadorjaJogouEssa = new int[3] { 0, 0, 0 };
+    public void Embaralhar()
+    {
+        List<Carta> baralhoAtual = cartas.ToList();
+        Stack<Carta> cartasEmbaralhadas = new();
 
-					while (!acabouARodada)
-					{
-						numCard = control.PegarCarta(); //pergunta qual carta o jogador deseja jogar
-						jaJogou = control.JaJogou(numCard, jaJogouEssaCarta); //confere se já jogou esssa carta
-						while (jaJogou)
-						{
-							Console.ForegroundColor = ConsoleColor.Red;
-							Console.WriteLine("ERRO => Você já jogou essa carta, escolha outra...");
-							Console.ForegroundColor = aux;
-							numCard = control.PegarCarta();
-							jaJogou = control.JaJogou(numCard, jaJogouEssaCarta);
-						}
-						pesoJogador = control.Jogar(numCard); //joga a carta que o jogador pediu e retorna o peso da carta
-						Thread.Sleep(1500);
-						pesoComputador = control.ComputadorJoga(comuputadorjaJogouEssa); //joga uma carta aleatoria do computador e retorna o peso da carta
-						Thread.Sleep(1500);
-						ganhouAMao = control.QuemGanhouAMao(pesoJogador, pesoComputador);
-						if (ganhouAMao == 0)
-						{
-							countMao++;
-							maoJogador++;
-						}
-						else if (ganhouAMao == 1)
-						{
-							countMao++;
-							maoComputador++;
-						}
-						else
-						{
-							countMao++;
-						}
+        while (baralhoAtual.Count() > 0)
+        {
+            int posicao = RandomNumberGenerator.GetInt32(0, baralhoAtual.Count());
+            cartasEmbaralhadas.Push(baralhoAtual.ElementAt(posicao));
+            baralhoAtual.RemoveAt(posicao);
+        }
 
-						if (maoJogador == 2)
-						{
-							Console.WriteLine("=======================================");
-							Console.ForegroundColor = ConsoleColor.Green;
-							Console.WriteLine("Você venceu a rodada!");
-							Console.ForegroundColor = aux;
-							jogadorGanhou = true;
-							acabouOJogo = control.AcabouOJogo(jogadorGanhou);//confere se acabou o jogo
-							maoJogador = 0;
-							maoComputador = 0;
-							countMao = 0;
-							acabouARodada = true;
-						}
-						else if (maoComputador == 2)
-						{
-							Console.WriteLine("=======================================");
-							Console.ForegroundColor = ConsoleColor.Red;
-							Console.WriteLine("O computador venceu a rodada.");
-							Console.ForegroundColor = aux;
-							jogadorGanhou = false;
-							acabouOJogo = control.AcabouOJogo(jogadorGanhou);
-							maoJogador = 0;
-							maoComputador = 0;
-							countMao = 0;
-							acabouARodada = true;
+        cartas = cartasEmbaralhadas;
+    }
 
-						}
-						else if (countMao > 2)
-						{
-							Console.WriteLine("=======================================");
-							Console.ForegroundColor = ConsoleColor.Yellow;
-							Console.WriteLine("Empate...");
-							Console.ForegroundColor = aux;
-							maoJogador = 0;
-							maoComputador = 0;
-							countMao = 0;
-							acabouARodada = true;
-							Console.WriteLine("->Pontos jogador: " + pontos.getpontosJogador());
-							Console.WriteLine("->Pontos computador: " + pontos.getpontosComputador());
-							acabouOJogo = pontos.AcabouOJogo();
-						}
-						else
-						{
-							continue;
-						}
+    public int CartasRestantes { get => cartas.Count(); }
+    public Carta CartaDoTopo { get => cartas.Pop(); }
+}
 
+class Carta
+{
+    private const string NumerosValidos = "A23QJK";
+    private const string NaipesValidos = "♣♥♠♦";
+    public string Numero { get; private set; }
+    public string Naipe { get; private set; }
+    public string Face
+    {
+        get => $"{Numero}{Naipe}";
+    }
 
-					}
+    public Carta(string numero, string naipe)
+    {
+        numero = numero.ToUpper();
+        if (numero.Length != 1 || !NumerosValidos.Contains(numero))
+            throw new ArgumentException("Número inválido");
 
-				}
-				catch (Excecoes e)
-				{
-					Console.WriteLine(e.Message);
-				}
+        naipe = naipe.ToUpper();
+        if (naipe.Length != 1 || !NaipesValidos.Contains(naipe))
+            throw new ArgumentException("Naipe inválido");
 
-		}
-		}
-
-	}
+        Numero = numero;
+        Naipe = naipe;
+    }
 }
